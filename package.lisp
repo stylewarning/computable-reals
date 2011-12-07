@@ -1,5 +1,6 @@
 (defpackage #:computable-reals
   (:use #:common-lisp)
+  (:nicknames #:cr)
   (:export 
    ;; reals.lisp
    #:creal
