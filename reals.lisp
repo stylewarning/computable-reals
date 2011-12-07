@@ -9,9 +9,7 @@
 ;; Package for computable real numbers
 
 
-(in-package #:reals)
-
-(export ')
+(in-package #:computable-reals)
 
 ;;; Computable reel numbers are rational numbers or structures:
 
