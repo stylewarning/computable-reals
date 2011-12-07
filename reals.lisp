@@ -1,13 +1,13 @@
 ;;;; Computable real numbers
+
 ;;;; Michael Stoll
 ;;;; 1989-06-11, 1989-06-12, 1989-06-13, 1989-06-14, 1989-06-17, 1989-06-30
 
+;;;; Modified by Robert Smith
+;;;; 2011-12-07
 
 ;;;;   I N T E R N A L   S T R U C T U R E S   A N D   I N T E R F A C E
 ;;;;   -----------------------------------------------------------------
-
-;; Package for computable real numbers
-
 
 (in-package #:computable-reals)
 
@@ -15,10 +15,10 @@
 
 (defstruct (c-real (:copier nil)
                    (:print-function print-c-real))
-           (value     0      :type integer)
-           (precision -1     :type (integer -1 *))
-           (compute   nil    :type (function ((integer 0 *)) integer)
-                             :read-only t))
+  (value     0      :type integer)
+  (precision -1     :type (integer -1 *))
+  (compute   nil    :type (function ((integer 0 *)) integer)
+                    :read-only t))
 
 (deftype CREAL ()
   "type of the computable real numbers"
@@ -64,6 +64,8 @@
         (t (cr-error 'get-approx x))))
 
 ;;; A few shortcuts for signalling type errors.
+
+;;; TODO: these can be removed if conditions and asserts are used.
 
 (defun cr-error (fun x)
   (error "~S: ~S is not a computable real number" fun x))
@@ -388,13 +390,6 @@ denoting the number of binary digits after the decimal point")
                  (erg 0 (+ erg (round y n))))
                 ((< (abs y) n) (round-cr erg k0))))))))
 
-;;; Now log2:
-
-(defconstant LOG2-R (+r (ash-r (log-r2 1/7) 1) (log-r2 1/17))
-  "log(2) as CREAL")
-
-(get-approx log2-r 200)  ; precompute to ca. 60 decimal digits
-
 ;;; (log-r1 x) takes a creal x from [1,2] and returns log(x) as creal
 
 (defun log-r1 (x)
@@ -499,22 +494,6 @@ denoting the number of binary digits after the decimal point")
                  (erg 0 (+ erg (round y n))))
                 ((< (abs y) n) (round-cr erg k0))))))))
 
-;;; Now pi:
-
-(defconstant PI-R (-r (ash-r (atan-r1 1/10) 5)
-                      (ash-r (atan-r1 1/515) 4)
-                      (ash-r (atan-r1 1/239) 2))
-  "pi as CREAL")
-
-(defconstant 2PI-R (ash-r pi-r 1) "2*pi as CREAL")
-(defconstant PI/2-R (ash-r pi-r -1) "pi/2 as CREAL")
-(defconstant PI/4-R (ash-r pi-r -2) "pi/4 as CREAL")
-
-(get-approx 2pi-r 200) ; compute to ca. 60 decimal digits
-(get-approx pi-r 200)
-(get-approx pi/2-r 200)
-(get-approx pi/4-r 200)
-
 ;;; (atan-r0 x) takes a creal x and returns atan(x) as creal.
 
 (defun atan-r0 (x)
@@ -522,9 +501,9 @@ denoting the number of binary digits after the decimal point")
   (let ((a (get-approx x 3)))
     (cond ((<= -3 a 3) (atan-r1 x))
           ((< a -3) (minus-r (atan-r0 (minus-r x)))) ; atan(x) = -atan(-x)
-          ((< 3 a 17) (+r pi/4-r (atan-r1 (transf x))))
+          ((< 3 a 17) (+r +pi/4-r+ (atan-r1 (transf x))))
                     ; atan(x) = pi/4 + atan((x-1)/(x+1))
-          (t (-r pi/2-r (atan-r1 (invert-r x))))))) ; atan(x) = pi/2 - atan(1/x)
+          (t (-r +pi/2-r+ (atan-r1 (invert-r x))))))) ; atan(x) = pi/2 - atan(1/x)
 
 ;;; (atan-r x [y]) computes the arctangent of the creals x (and y if given)
 
@@ -543,12 +522,12 @@ denoting the number of binary digits after the decimal point")
                         (- (integer-length ay)) (- nx))))
           (cond ((and (plusp sx) (>= mx-my 0)) (atan-r0 (/r y x)))
                 ((and (plusp sy) (<= mx-my 0))
-                 (-r pi/2-r (atan-r0 (/r x y))))
+                 (-r +pi/2-r+ (atan-r0 (/r x y))))
                 ((and (minusp sy) (<= mx-my 0))
-                 (minus-r (+r (atan-r0 (/r x y)) pi/2-r)))
+                 (minus-r (+r (atan-r0 (/r x y)) +pi/2-r+)))
                 ((and (minusp sx) (minusp sy) (>= mx-my 0))
-                 (-r (atan-r0 (/r y x)) pi-r))
-                (t (+r (atan-r0 (/r y x)) pi-r))))))))
+                 (-r (atan-r0 (/r y x)) +pi-r+))
+                (t (+r (atan-r0 (/r y x)) +pi-r+))))))))
 
 ;;; (sin-r1 x) takes a creal x with |x|<4 and returns sin(x) as creal.
 
@@ -573,7 +552,7 @@ denoting the number of binary digits after the decimal point")
   ;; remember sin(k*2pi + y) = sin(y)
   (if (eql x 0)
     0
-    (multiple-value-bind (q r) (round-r x 2pi-r 10)
+    (multiple-value-bind (q r) (round-r x +2pi-r+ 10)
       (declare (ignore q))
       (sin-r1 r))))
 
@@ -600,7 +579,7 @@ denoting the number of binary digits after the decimal point")
   ;; remember cos(k*2pi + y) = cos(y)
   (if (eql x 0)
     1
-    (multiple-value-bind (q r) (round-r x 2pi-r 10)
+    (multiple-value-bind (q r) (round-r x +2pi-r+ 10)
       (declare (ignore q))
       (cos-r1 r))))
 
