@@ -1,0 +1,17 @@
+;;;; The code below can be used freely under the following conditions:
+;;;; * Due credit is given to the original author.
+;;;; * You use it at your own risk. The code is experimental and meant
+;;;;   as a case study to show that "lazy reals" can be implemented.
+;;;;   In particular, no guarantee is given that the code conforms to
+;;;;   the specification given below.
+;;;;
+;;;; If you use it in publications (including software), please let me
+;;;; know.
+;;;;
+;;;; Note: The main focus here is on correct results (which are, however,
+;;;; not guaranteed, see above). It is certainly possible to improve the
+;;;; efficiency of the code quite a bit.
+;;;;
+;;;; Michael Stoll, December 11, 2009
+;;;; firstname.lastname@uni-bayreuth.de
+
