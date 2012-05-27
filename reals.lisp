@@ -490,20 +490,20 @@ denoting the number of binary digits after the decimal point")
 (defun atan-r1 (x)
   (declare (type creal x))
   (if (eql x 0)
-    0
-    (make-real
-      #'(lambda (k)
-          (let* ((k0 (integer-length (1- (integer-length k))))
-                     ; k0 = extra precision needed for partial sums
-                 (k1 (+ k k0)) ; k1 = total precision needed
-                 (ax (get-approx x (1+ k1)))
-                 (fx (round ax 2)) ; fx = k1-approximation of x
-                 (fx2 (- (round-cr (* ax ax) (+ k1 2)))) ; fx2 = dito of -x^2
-                )
-            (do ((n 1 (+ n 2))
-                 (y fx (round-cr (* y fx2) k1))
-                 (erg 0 (+ erg (round y n))))
-                ((< (abs y) n) (round-cr erg k0))))))))
+      0
+      (make-real
+       #'(lambda (k)
+           (let* ((k0 (integer-length (1- (integer-length k))))
+                  ;; k0 = extra precision needed for partial sums
+                  (k1 (+ k k0))         ; k1 = total precision needed
+                  (ax (get-approx x (1+ k1)))
+                  (fx (round ax 2))     ; fx = k1-approximation of x
+                  (fx2 (- (round-cr (* ax ax) (+ k1 2)))) ; fx2 = dito of -x^2
+                  )
+             (do ((n 1 (+ n 2))
+                  (y fx (round-cr (* y fx2) k1))
+                  (erg 0 (+ erg (round y n))))
+                 ((< (abs y) n) (round-cr erg k0))))))))
 
 ;;; (atan-r0 x) takes a creal x and returns atan(x) as creal.
 
@@ -523,76 +523,77 @@ denoting the number of binary digits after the decimal point")
   (assert (creal-p x))
   (assert (or (null y) (creal-p y)))
   (if (null y)
-    (atan-r0 x)
-    (multiple-value-bind (ax nx sx) (raw-approx-cr x)
+      (atan-r0 x)
+      
       (multiple-value-bind (ay ny sy) (raw-approx-cr y)
-        (when (and (eql 0 sx) (eql 0 sy))
-          (error "~S: both arguments should not be zero"
-                 'atan))
-        (let ((mx-my (+ (integer-length ax) ny 
-                        (- (integer-length ay)) (- nx))))
-          (cond ((and (plusp sx) (>= mx-my 0)) (atan-r0 (/r y x)))
-                ((and (plusp sy) (<= mx-my 0))
-                 (-r +pi/2-r+ (atan-r0 (/r x y))))
-                ((and (minusp sy) (<= mx-my 0))
-                 (minus-r (+r (atan-r0 (/r x y)) +pi/2-r+)))
-                ((and (minusp sx) (minusp sy) (>= mx-my 0))
-                 (-r (atan-r0 (/r y x)) +pi-r+))
-                (t (+r (atan-r0 (/r y x)) +pi-r+))))))))
+        (multiple-value-bind (ax nx sx) (raw-approx-cr x)
+          (when (and (eql 0 sy) (eql 0 sx))
+            (error "~S: both arguments should not be zero"
+                   'atan))
+          (let ((my-mx (+ (integer-length ay) nx 
+                          (- (integer-length ax)) (- ny))))
+            (cond ((and (plusp sy) (>= my-mx 0)) (atan-r0 (/r x y)))
+                  ((and (plusp sx) (<= my-mx 0))
+                   (-r +pi/2-r+ (atan-r0 (/r y x))))
+                  ((and (minusp sx) (<= my-mx 0))
+                   (minus-r (+r (atan-r0 (/r y x)) +pi/2-r+)))
+                  ((and (minusp sy) (minusp sx) (>= my-mx 0))
+                   (-r (atan-r0 (/r x y)) +pi-r+))
+                  (t (+r (atan-r0 (/r x y)) +pi-r+))))))))
 
 ;;; (sin-r1 x) takes a creal x with |x|<4 and returns sin(x) as creal.
 
 (defun sin-r1 (x)
   (declare (type creal x))
   (make-real
-    #'(lambda (k)
-        (let ((m 3) (k2 (+ k 3)))
-          (loop (when (<= k2 (ash (- m 2) m)) (return))
-                (incf m))
-          (setq m (+ m 4) k2 (+ k m))
-          (let ((x0 (get-approx x k2)))
-            (do ((x1 (- (round-cr (* x0 x0) k2)))
-                 (n 2 (+ n 2))
-                 (y x0 (round-cr (round (* y x1) (* n (1+ n))) k2))
-                 (erg 0 (+ erg y)))
-                ((eql y 0) (round-cr erg m))))))))
+   #'(lambda (k)
+       (let ((m 3) (k2 (+ k 3)))
+         (loop (when (<= k2 (ash (- m 2) m)) (return))
+               (incf m))
+         (setq m (+ m 4) k2 (+ k m))
+         (let ((x0 (get-approx x k2)))
+           (do ((x1 (- (round-cr (* x0 x0) k2)))
+                (n 2 (+ n 2))
+                (y x0 (round-cr (round (* y x1) (* n (1+ n))) k2))
+                (erg 0 (+ erg y)))
+               ((eql y 0) (round-cr erg m))))))))
 
 (defun SIN-R (x)
   "sine for CREALs"
   (assert (creal-p x))
   ;; remember sin(k*2pi + y) = sin(y)
   (if (eql x 0)
-    0
-    (multiple-value-bind (q r) (round-r x +2pi-r+ 10)
-      (declare (ignore q))
-      (sin-r1 r))))
+      0
+      (multiple-value-bind (q r) (round-r x +2pi-r+ 10)
+        (declare (ignore q))
+        (sin-r1 r))))
 
 ;;; (cos-r1 x) takes a creal x with |x|<4 and returns cos(x) as creal.
 
 (defun cos-r1 (x)
   (declare (type creal x))
   (make-real
-    #'(lambda (k)
-        (let ((m 3) (k2 (+ k 3)))
-          (loop (when (<= k2 (ash (- m 2) m)) (return))
-                (incf m))
-          (setq m (+ m 4) k2 (+ k m))
-          (let ((x0 (get-approx x k2)))
-            (do ((x1 (- (round-cr (* x0 x0) k2)))
-                 (n 1 (+ n 2))
-                 (y (ash 1 k2) (round-cr (round (* y x1) (* n (1+ n))) k2))
-                 (erg 0 (+ erg y)))
-                ((eql y 0) (round-cr erg m))))))))
+   #'(lambda (k)
+       (let ((m 3) (k2 (+ k 3)))
+         (loop (when (<= k2 (ash (- m 2) m)) (return))
+               (incf m))
+         (setq m (+ m 4) k2 (+ k m))
+         (let ((x0 (get-approx x k2)))
+           (do ((x1 (- (round-cr (* x0 x0) k2)))
+                (n 1 (+ n 2))
+                (y (ash 1 k2) (round-cr (round (* y x1) (* n (1+ n))) k2))
+                (erg 0 (+ erg y)))
+               ((eql y 0) (round-cr erg m))))))))
 
 (defun COS-R (x)
   "cosine for CREALs"
   (assert (creal-p x))
   ;; remember cos(k*2pi + y) = cos(y)
   (if (eql x 0)
-    1
-    (multiple-value-bind (q r) (round-r x +2pi-r+ 10)
-      (declare (ignore q))
-      (cos-r1 r))))
+      1
+      (multiple-value-bind (q r) (round-r x +2pi-r+ 10)
+        (declare (ignore q))
+        (cos-r1 r))))
 
 (defun TAN-R (x)
   "tangent for CREALs"
