@@ -101,8 +101,8 @@ denoting the number of binary digits after the decimal point")
 (defun round-cr (a k)
   (declare (type integer a) (type (integer 0 *) k))
   (if (eql k 0)
-    a
-    (if (logbitp (1- k) a) (1+ (ash a (- k))) (ash a (- k)))))
+      a
+      (if (logbitp (1- k) a) (1+ (ash a (- k))) (ash a (- k)))))
 
 ;;; Auxiliary function for approximating.
 
@@ -129,10 +129,10 @@ denoting the number of binary digits after the decimal point")
   (defun tenpower (k)
     (declare (type (integer 0 *) k))
     (if (eql k pp)
-      tenpowerpp
-      (let ((zhk (expt 10 k)))
-        (when (eql k *print-prec*) (setq pp k tenpowerpp zhk))
-        zhk))))
+        tenpowerpp
+        (let ((zhk (expt 10 k)))
+          (when (eql k *print-prec*) (setq pp k tenpowerpp zhk))
+          zhk))))
 
 ;;; The next function performs output to k digits after the decimal point,
 ;;; ensuring an error of at most one unit on the last digit.
@@ -185,17 +185,17 @@ denoting the number of binary digits after the decimal point")
           (t (cr-error '+ x))) )
   ;; sn = exact partial sum
   ;; rl = list of the "real" real arguments
-  (let* ((n (length rl)) ; n = how many of them
+  (let* ((n (length rl))                ; n = how many of them
          (k1 (integer-length (if (integerp sn) n (1+ n))))
-           ; k1 = number of additional binary digits for the summands
-        )
+         ;; k1 = number of additional binary digits for the summands
+         )
     (if (eql n 0)
-      sn        ; sum is exact
-      (make-real
-        #'(lambda (k &aux (k2 (+ k k1)))
-            (do ((sum (get-approx sn k2) (+ sum (get-approx (first l) k2)))
-                 (l rl (rest l)))
-                ((null l) (round-cr sum k1))))))))
+        sn                              ; sum is exact
+        (make-real
+         #'(lambda (k &aux (k2 (+ k k1)))
+             (do ((sum (get-approx sn k2) (+ sum (get-approx (first l) k2)))
+                  (l rl (rest l)))
+                 ((null l) (round-cr sum k1))))))))
 
 ;;; Negation:
 
@@ -209,8 +209,8 @@ denoting the number of binary digits after the decimal point")
 (defun -R (x1 &rest args)
   "subtraction and negation of CREALs"
   (if (null args)
-    (minus-r x1)
-    (+r x1 (minus-r (apply #'+r args)))))
+      (minus-r x1)
+      (+r x1 (minus-r (apply #'+r args)))))
 
 ;;; Now comes the multiplication.
 
@@ -241,18 +241,18 @@ denoting the number of binary digits after the decimal point")
     ;; ll = list of the corresponding precision differences
     ;; nl = list of the correspodning minimum precisions
     (make-real
-      #'(lambda (k)
-          (let ((erg pn) (s (- k)) (rl rl) (ll ll) (nl nl) k1)
-            (loop (setq k1 (max (first nl) (+ k (first ll)))
-                        s (+ s k1)
-                        erg (* erg (get-approx (first rl) k1))
-                        rl (rest rl)
-                        ll (rest ll)
-                        nl (rest nl))
-                  (when (null rl) 
-                    (return (if (minusp s)
-                              0
-                              (round-cr erg s))))))))))
+     #'(lambda (k)
+         (let ((erg pn) (s (- k)) (rl rl) (ll ll) (nl nl) k1)
+           (loop (setq k1 (max (first nl) (+ k (first ll)))
+                       s (+ s k1)
+                       erg (* erg (get-approx (first rl) k1))
+                       rl (rest rl)
+                       ll (rest ll)
+                       nl (rest nl))
+                 (when (null rl) 
+                   (return (if (minusp s)
+                               0
+                               (round-cr erg s))))))))))
 
 ;;; Reciprocal:
 
@@ -272,8 +272,8 @@ denoting the number of binary digits after the decimal point")
 (defun /R (x1 &rest args)
   "division for CREALs"
   (if (null args)
-    (invert-r x1)
-    (*r x1 (invert-r (apply #'*r args)))))
+      (invert-r x1)
+      (*r x1 (invert-r (apply #'*r args)))))
 
 ;;; Square root:
 (defun rational-sqrt (x)
@@ -301,7 +301,7 @@ denoting the number of binary digits after the decimal point")
               (n1 (ceiling n0 2)))
           (make-real
            #'(lambda (k &aux (k2 (max n1 (ceiling (+ k k1) 2)))
-                          (k3 (max 0 (- k -2 k1))))
+                             (k3 (max 0 (- k -2 k1))))
                (round-cr (isqrt (ash (get-approx x (* 2 k2)) (* 2 k3)))
                          (+ k3 k2 (- k)))))))))
 
@@ -329,34 +329,35 @@ denoting the number of binary digits after the decimal point")
   (divide-r 'truncate #'truncate x y l))
 
 (defun divide-r (name what x y l)
-  ; name = name of the calling function
-  ; what = #'round, #'floor, #'ceiling or #'truncate
+  ;; name = name of the calling function
+  ;;
+  ;; what = #'round, #'floor, #'ceiling or #'truncate
   (assert (creal-p x))
   (assert (creal-p y))
   (if (and (rationalp x) (rationalp y))
-    (funcall what x y)    ; for rational numbers use the common function
-    (multiple-value-bind (a0 n0) (raw-approx-cr y)
-      (when (eql a0 0) (error "~S: division by 0" name))
-      (when (null l)
-        (setq l (+ (integer-length a0) *creal-tolerance* (- n0))))
-      (let* ((x1 (abs (get-approx x n0)))
-             (m (max n0 (+ l 2 n0 (integer-length (+ x1 a0 -1))
-                           (* -2 (integer-length (1- a0))))))
-             (q (funcall what (get-approx x m) (get-approx y m))))
-        (values q (rest-help-r x y (- q)))))))
+      (funcall what x y) ; for rational numbers use the common function
+      (multiple-value-bind (a0 n0) (raw-approx-cr y)
+        (when (eql a0 0) (error "~S: division by 0" name))
+        (when (null l)
+          (setq l (+ (integer-length a0) *creal-tolerance* (- n0))))
+        (let* ((x1 (abs (get-approx x n0)))
+               (m (max n0 (+ l 2 n0 (integer-length (+ x1 a0 -1))
+                             (* -2 (integer-length (1- a0))))))
+               (q (funcall what (get-approx x m) (get-approx y m))))
+          (values q (rest-help-r x y (- q)))))))
 
 ;; (rest-help-r x y q), with x,y creal, q integer, computes x + q*y.
 
 (defun rest-help-r (x y q)
   (declare (type creal x y) (type integer q))
   (if (eql q 0)
-    x
-    (let ((k1 (1+ (integer-length (1- (abs q))))))
-      (make-real
-        #'(lambda (k)
-            (round-cr (+ (ash (get-approx x (+ k 2)) (- k1 2))
-                         (* q (get-approx y (+ k k1))))
-                      k1))))))
+      x
+      (let ((k1 (1+ (integer-length (1- (abs q))))))
+        (make-real
+         #'(lambda (k)
+             (round-cr (+ (ash (get-approx x (+ k 2)) (- k1 2))
+                          (* q (get-approx y (+ k k1))))
+                       k1))))))
 
 ;;; Now comes the arithmetic shift function for infinite binary fractions:
 
@@ -369,13 +370,13 @@ denoting the number of binary digits after the decimal point")
          (if (plusp n) (ash x n) (/ x (ash 1 (- n)))))
         ((rationalp x)
          (if (plusp n)
-           (/ (ash (numerator x) n) (denominator x))
-           (/ (numerator x) (ash (denominator x) (- n)))))
+             (/ (ash (numerator x) n) (denominator x))
+             (/ (numerator x) (ash (denominator x) (- n)))))
         ((plusp n) (make-real #'(lambda (k) (get-approx x (+ k n)))))
         (t (make-real #'(lambda (k)
                           (if (minusp (+ k n))
-                            (round-cr (get-approx x 0) (- (+ k n)))
-                            (get-approx x (+ k n))))))))
+                              (round-cr (get-approx x 0) (- (+ k n)))
+                              (get-approx x (+ k n))))))))
 
 ;;; Now we look at the most important transcendental functions.
 
@@ -385,21 +386,21 @@ denoting the number of binary digits after the decimal point")
 (defun log-r2 (x)
   (declare (type creal x))
   (if (eql x 0)
-    0
-    (make-real
-      #'(lambda (k)
-          (let* ((k0 (integer-length (1- (integer-length k))))
-                     ; k0 = extra precision needed for partial sums
-                 (k1 (+ k k0 1)) ; k1 = total precision needed
-                                 ; (+1 because of factor 2)
-                 (ax (get-approx x (1+ k1)))
-                 (fx (round ax 2)) ; fx = k1-approximation of x
-                 (fx2 (round-cr (* ax ax) (+ k1 2))) ; fx2 = dito of x^2
-                )
-            (do ((n 1 (+ n 2))
-                 (y fx (round-cr (* y fx2) k1))
-                 (erg 0 (+ erg (round y n))))
-                ((< (abs y) n) (round-cr erg k0))))))))
+      0
+      (make-real
+       #'(lambda (k)
+           (let* ((k0 (integer-length (1- (integer-length k))))
+                                        ; k0 = extra precision needed for partial sums
+                  (k1 (+ k k0 1))       ; k1 = total precision needed
+                                        ; (+1 because of factor 2)
+                  (ax (get-approx x (1+ k1)))
+                  (fx (round ax 2))     ; fx = k1-approximation of x
+                  (fx2 (round-cr (* ax ax) (+ k1 2))) ; fx2 = ditto of x^2
+                  )
+             (do ((n 1 (+ n 2))
+                  (y fx (round-cr (* y fx2) k1))
+                  (erg 0 (+ erg (round y n))))
+                 ((< (abs y) n) (round-cr erg k0))))))))
 
 ;;; (log-r1 x) takes a creal x from [1,2] and returns log(x) as creal
 
@@ -412,10 +413,10 @@ denoting the number of binary digits after the decimal point")
 (defun transf (x)
   (declare (type creal x))
   (if (rationalp x)
-    (/ (1- x) (1+ x))
-    (make-real #'(lambda (k)
-                   (let ((a (get-approx x k)) (e (ash 1 k)))
-                     (round (ash (- a e) k) (+ a e)))))))
+      (/ (1- x) (1+ x))
+      (make-real #'(lambda (k)
+                     (let ((a (get-approx x k)) (e (ash 1 k)))
+                       (round (ash (- a e) k) (+ a e)))))))
 
 ;;; Now the logarithm.
 
@@ -441,24 +442,24 @@ denoting the number of binary digits after the decimal point")
 (defun exp-r1 (x)
   (declare (type creal x))
   (make-real
-    #'(lambda (k)
-        (let ((m 3) (k2 (+ k 3)))
-          (loop (when (<= k2 (ash (- m 2) m)) (return))
-                (incf m))
-          (setq m (+ m 3) k2 (+ k m))
-          (do ((x1 (get-approx x k2))
-               (n 1 (1+ n))
-               (y (ash 1 k2) (round-cr (round (* y x1) n) k2))
-               (erg 0 (+ erg y)))
-              ((eql y 0) (round-cr erg m)))))))
+   #'(lambda (k)
+       (let ((m 3) (k2 (+ k 3)))
+         (loop (when (<= k2 (ash (- m 2) m)) (return))
+               (incf m))
+         (setq m (+ m 3) k2 (+ k m))
+         (do ((x1 (get-approx x k2))
+              (n 1 (1+ n))
+              (y (ash 1 k2) (round-cr (round (* y x1) n) k2))
+              (erg 0 (+ erg y)))
+             ((eql y 0) (round-cr erg m)))))))
 
 (defun EXP-R (x) "exponential function for CREALs"
   (unless (creal-p x) (cr-error 'exp x))
   ;; remember exp(a*log2 + b) = exp(b) * 2^a
   (if (eql x 0)
-    1
-    (multiple-value-bind (q r) (round-r x +log2-r+ 10)
-      (ash-r (exp-r1 r) q))))
+      1
+      (multiple-value-bind (q r) (round-r x +log2-r+ 10)
+        (ash-r (exp-r1 r) q))))
 
 ;;; (expt-r x y) takes creals x,y and computes x^y
 
@@ -524,7 +525,6 @@ denoting the number of binary digits after the decimal point")
   (assert (or (null y) (creal-p y)))
   (if (null y)
       (atan-r0 x)
-      
       (multiple-value-bind (ay ny sy) (raw-approx-cr y)
         (multiple-value-bind (ax nx sx) (raw-approx-cr x)
           (when (and (eql 0 sy) (eql 0 sx))
