@@ -46,7 +46,7 @@
 (defun APPROX-R (x k)
   "Computes approximations for CREALs"
   (assert (creal-p x))
-  (assert (and (and integerp k)
+  (assert (and (integerp k)
                (not (minusp k))))
   (get-approx x k))
 
@@ -276,23 +276,34 @@ denoting the number of binary digits after the decimal point")
     (*r x1 (invert-r (apply #'*r args)))))
 
 ;;; Square root:
+(defun rational-sqrt (x)
+  (typecase x
+    ((integer 0)
+     (let ((sqrt (isqrt x)))
+       (and (= x (* sqrt sqrt))
+            sqrt)))
+    ((rational 0)
+     (let ((numerator   (rational-sqrt (numerator x)))
+           (denominator (rational-sqrt (denominator x))))
+       (and numerator denominator
+            (/ numerator denominator))))))
 
-(defun SQRT-R (x &aux s)
+(defun SQRT-R (x)
   "square root for CREALs"
   (assert (creal-p x))
-  (if (and (rationalp x) (>= x 0) (rationalp (setq s (sqrt x))))
-    s
-    (multiple-value-bind (a0 n0 s) (raw-approx-cr x)
-      (unless (plusp s)
-        (error "~S: attempting to compute the square root of a negative number"
-               'sqrt-r))
-      (let ((k1 (1+ (ceiling (- n0 (integer-length (1- a0))) 2)))
-            (n1 (ceiling n0 2)))
-        (make-real
-          #'(lambda (k &aux (k2 (max n1 (ceiling (+ k k1) 2)))
-                            (k3 (max 0 (- k -2 k1))))
-              (round-cr (isqrt (ash (get-approx x (* 2 k2)) (* 2 k3)))
-                        (+ k3 k2 (- k)))))))))
+  (or (and (rationalp x) (>= x 0)
+           (rational-sqrt x))
+      (multiple-value-bind (a0 n0 s) (raw-approx-cr x)
+        (unless (plusp s)
+          (error "~S: attempting to compute the square root of a negative number"
+                 'sqrt-r))
+        (let ((k1 (1+ (ceiling (- n0 (integer-length (1- a0))) 2)))
+              (n1 (ceiling n0 2)))
+          (make-real
+           #'(lambda (k &aux (k2 (max n1 (ceiling (+ k k1) 2)))
+                          (k3 (max 0 (- k -2 k1))))
+               (round-cr (isqrt (ash (get-approx x (* 2 k2)) (* 2 k3)))
+                         (+ k3 k2 (- k)))))))))
 
 ;;; Now comes a round function.
 ;;; (round-r x y l) (x, y creal, l int>=0) returns two values q and r,
@@ -420,7 +431,7 @@ denoting the number of binary digits after the decimal point")
           (error "~S: attempt to compute the logarithm of a nonpositive number"
                  'log-r))
         (let ((shift (- (integer-length a0) 1 n0)))
-          (rest-help-r (log-r1 (ash-r x (- shift))) log2-r shift)))))
+          (rest-help-r (log-r1 (ash-r x (- shift))) +log2-r+ shift)))))
 
 ;;; Now the exponential function.
 
@@ -446,7 +457,7 @@ denoting the number of binary digits after the decimal point")
   ;; remember exp(a*log2 + b) = exp(b) * 2^a
   (if (eql x 0)
     1
-    (multiple-value-bind (q r) (round-r x log2-r 10)
+    (multiple-value-bind (q r) (round-r x +log2-r+ 10)
       (ash-r (exp-r1 r) q))))
 
 ;;; (expt-r x y) takes creals x,y and computes x^y
@@ -461,7 +472,7 @@ denoting the number of binary digits after the decimal point")
         ((and (rationalp y)
               (eql 2 (denominator y))
               (rationalp x)
-              (rationalp (setq s (sqrt x))))
+              (setq s (rational-sqrt x)))
          (expt s (* 2 y)))
         (t (exp-r (*r y (log-r x))))))
 
