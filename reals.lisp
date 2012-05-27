@@ -4,7 +4,7 @@
 ;;;; 1989-06-11, 1989-06-12, 1989-06-13, 1989-06-14, 1989-06-17, 1989-06-30
 
 ;;;; Modified by Robert Smith
-;;;; 2011-12-07
+;;;; 2011-12-07, 2012-05-26
 
 ;;;;   I N T E R N A L   S T R U C T U R E S   A N D   I N T E R F A C E
 ;;;;   -----------------------------------------------------------------
@@ -512,10 +512,15 @@ denoting the number of binary digits after the decimal point")
   (declare (type creal x))
   (let ((a (get-approx x 3)))
     (cond ((<= -3 a 3) (atan-r1 x))
-          ((< a -3) (minus-r (atan-r0 (minus-r x)))) ; atan(x) = -atan(-x)
+
+          ;; atan(x) = -atan(-x)
+          ((< a -3) (minus-r (atan-r0 (minus-r x))))
+          
+          ;; atan(x) = pi/4 + atan((x-1)/(x+1))
           ((< 3 a 17) (+r +pi/4-r+ (atan-r1 (transf x))))
-                    ; atan(x) = pi/4 + atan((x-1)/(x+1))
-          (t (-r +pi/2-r+ (atan-r1 (invert-r x))))))) ; atan(x) = pi/2 - atan(1/x)
+
+          ;; atan(x) = pi/2 - atan(1/x)
+          (t (-r +pi/2-r+ (atan-r1 (invert-r x))))))) 
 
 ;;; (atan-r x [y]) computes the arctangent of the creals x (and y if given)
 
