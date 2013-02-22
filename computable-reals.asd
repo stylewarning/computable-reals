@@ -5,13 +5,14 @@
 
 (defsystem computable-reals
   :name "computable-reals"
-  :version "1.0"
+  :version "1.0.1"
   :author "Michael Stoll"
-  :maintainer "Robert Smith"
+  :maintainer "Robert Smith <quad@symbo1ics.com>"
   :description "Computable real numbers."
   :long-description "Arbitrary-precision, re-computing real-numbers."
 
   :serial t
   :components ((:file "package")
+               (:file "constants")
                (:file "reals")
-               (:file "constants")))
+               (:file "get-approximations")))

@@ -4,14 +4,14 @@
 ;;;; 1989-06-11, 1989-06-12, 1989-06-13, 1989-06-14, 1989-06-17, 1989-06-30
 
 ;;;; Modified by Robert Smith
-;;;; 2011-12-07, 2012-05-26
+;;;; 2011-12-07, 2012-05-26, 2013-02-21
 
 ;;;;   I N T E R N A L   S T R U C T U R E S   A N D   I N T E R F A C E
 ;;;;   -----------------------------------------------------------------
 
 (in-package #:computable-reals)
 
-;;; Computable reel numbers are rational numbers or structures:
+;;; Computable real numbers are rational numbers or structures:
 
 (defstruct (c-real (:copier nil)
                    (:print-function print-c-real))
@@ -21,7 +21,7 @@
                     :read-only t))
 
 (deftype CREAL ()
-  "type of the computable real numbers"
+  "The type of the computable real numbers."
   '(or rational c-real))
 
 (defun CREAL-P (x) (or (rationalp x) (c-real-p x)))
