@@ -1,38 +1,40 @@
-                       I N T R O D U C T I O N
-                       =======================
+# Computable Reals
 
-Computable real numbers x are interpreted as (potentially) infinite
+## Introduction
+
+Computable real numbers `x` are interpreted as (potentially) infinite
 fractions in base 2 that are specified through a rule for computation
-of an integer a with |(2^k)*x - a| <= 1 for any k>=0.
+of an integer `a` with `|(2^k)*x - a| <= 1` for any `k>=0`.
 
 The internal data structure should not be accessed.
+
 The interface for the outside world is as follows:
 
-The type CREAL is a supertype of the type RATIONAL. (CREAL-P x), for
-an object x, returns T if x is of type CREAL, otherwise NIL.
+The type `CREAL` is a supertype of the type `RATIONAL`. `(CREAL-P x)`, for
+an object `x`, returns `T` if `x` is of type `CREAL`, otherwise `NIL`.
 
-(APPROX-R x k), for a CREAL x and an integer k>=0, returns an integer
-a with |(2^k)*x - a| < 1.
+`(APPROX-R x k)`, for a `CREAL` `x` and an integer `k>=0`, returns an integer
+`a` with `|(2^k)*x - a| < 1`.
 
-(MAKE-REAL fun) returns the real number given by fun. Here fun is a
-function taking an argument k, that computes a as above.
+`(MAKE-REAL fun)` returns the real number given by `fun`. Here `fun` is a
+function taking an argument `k`, that computes `a` as above.
 
-CREALs are output by print etc. as a decimal fraction. The error hereby
+`CREAL`s are output by print etc. as a decimal fraction. The error hereby
 is at most one unit in the last digit that was output. The number of
 decimal digits after the decimal point is defined through the dynamic
-variable *PRINT-PREC*.
+variable `*PRINT-PREC*`.
 
 For comparison operations etc. a precision threshold is used. It is
-defined through the dynamic variable *CREAL-TOLERANCE*. Its value should
-be a nonnegative integer n, meaning that numbers are considered equal
-if they differ by at most 2^(-n).
+defined through the dynamic variable `*CREAL-TOLERANCE*`. Its value should
+be a nonnegative integer `n`, meaning that numbers are considered equal
+if they differ by at most `2^(-n)`.
 
-
-     E X P O R T E D   F U N C T I O N S   A N D   C O N S T A N T S
-     ===============================================================
+## Exported Functions and Constants
 
 The following functions, constants and variables are exported. (The
-package is named "REALS".)
+package is named `"REALS"`.)
+
+```
 CREAL                  type        type of the computable real numbers
 CREAL-P object         function    tests for type CREAL
 *PRINT-PREC*           variable    specifies precision of output
@@ -54,11 +56,11 @@ PRINT-R x:creal k:int>=0 &optional (flag t)
 *R {creal}*            function    computes the product of the arguments
 /R creal {creal}*      function    computes reciprocal or quotient
 SQRT-R creal           function    computes the square root
-LOG2-R                 constant    log(2)
-PI-R                   constant    pi
-2PI-R                  constant    2*pi
-PI/2-R                 constant    pi/2
-PI/4-R                 constant    pi/4
++LOG2-R+               constant    log(2)
++PI-R+                 constant    pi
++2PI-R+                constant    2*pi
++PI/2-R+               constant    pi/2
++PI/4-R+               constant    pi/4
 LOG-R x:creal &optional b:creal
                        function    computes the logarithm of n in base b;
                                    default is the natural logarithm
@@ -82,10 +84,8 @@ CEILING-R x:creal &optional y:creal
                        function    like ROUND-R, corresponding to ceiling
 TRUNCATE-R x:creal &optional y:creal
                        function    like ROUND-R, corresponding to truncate
+```
 
-
-In the code, exported symbols at their location of definition are
-emphasized in UPPERCASE.
 
 
 

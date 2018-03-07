@@ -1,5 +1,5 @@
-(defpackage #:computable-reals
-  (:use #:common-lisp)
+(cl:defpackage #:computable-reals
+  (:use #:cl)
   (:nicknames #:cr)
   (:export 
    ;; reals.lisp

@@ -3,8 +3,8 @@
 ;;;; Michael Stoll
 ;;;; 1989-06-11, 1989-06-12, 1989-06-13, 1989-06-14, 1989-06-17, 1989-06-30
 
-;;;; Modified by Robert Smith
-;;;; 2011-12-07, 2012-05-26, 2013-02-21
+;;;; Robert Smith
+;;;; 2011-12-07, 2012-05-26, 2013-02-21, 2018-03-06
 
 ;;;;   I N T E R N A L   S T R U C T U R E S   A N D   I N T E R F A C E
 ;;;;   -----------------------------------------------------------------
@@ -20,11 +20,15 @@
   (compute   nil    :type (function ((integer 0 *)) integer)
                     :read-only t))
 
+#+sbcl (declaim (sb-ext:freeze-type c-real))
+
 (deftype CREAL ()
   "The type of the computable real numbers."
   '(or rational c-real))
 
-(defun CREAL-P (x) (or (rationalp x) (c-real-p x)))
+(defun creal-p (x)
+  "Is X a CREAL?"
+  (typep x 'creal))
 
 ;; If r is a c-real with (c-real-value r) = a and (c-real-precision r) = k,
 ;; then a*2^(-k) is an approximation of the value of the number represented
@@ -34,8 +38,8 @@
 
 ;;; make-real creates a c-real from a computation function.
 
-(defun MAKE-REAL (comp)
-  "Create a c-real from a computation function COMP."
+(defun make-real (comp)
+  "Create a C-REAL from a computation function COMP."
   (declare (type (function ((integer 0 *)) integer) comp))
   (make-c-real :compute comp))
 
@@ -45,36 +49,22 @@
 
 (defun APPROX-R (x k)
   "Computes approximations for CREALs"
-  (assert (creal-p x))
-  (assert (and (integerp k)
-               (not (minusp k))))
+  (check-type x creal)
+  (check-type k unsigned-byte)
   (get-approx x k))
 
 (defun get-approx (x k)
   (declare (type creal x)
            (type (integer 0 *) k))
-  (cond ((integerp x) (ash x k))
-        ((rationalp x) (round (ash (numerator x) k) (denominator x)))
-        ((c-real-p x)
-         (if (>= (c-real-precision x) k)
-           (ash (c-real-value x) (- k (c-real-precision x)))
-           (let ((a (funcall (c-real-compute x) k)))
-             (setf (c-real-value x) a (c-real-precision x) k)
-             a)))
-        (t (cr-error 'get-approx x))))
-
-;;; A few shortcuts for signalling type errors.
-
-;;; TODO: these can be removed if conditions and asserts are used.
-
-(defun cr-error (fun x)
-  (error "~S: ~S is not a computable real number" fun x))
-
-(defun int-error (fun x)
-  (error "~S: ~S is not an integer" fun x))
-
-(defun nat-error (fun x)
-  (error "~S: ~S is not a nonnegative integer" fun x))
+  (etypecase x
+    (integer (ash x k))
+    (rational (round (ash (numerator x) k) (denominator x)))
+    (c-real
+     (if (>= (c-real-precision x) k)
+         (ash (c-real-value x) (- k (c-real-precision x)))
+         (let ((a (funcall (c-real-compute x) k)))
+           (setf (c-real-value x) a (c-real-precision x) k)
+           a)))))
 
 ;;;; ==========================================================================
 
@@ -84,12 +74,12 @@
 ;;; *print-prec* specifies how many digits after the decimal point are output
 ;;; (by print etc.)
 
-(defparameter *PRINT-PREC* 20
+(defvar *PRINT-PREC* 20
   "number of decimal digits after the decimal point during output of CREALs")
 
 ;;; *creal-tolerance* specifies the precision of comparison operations
 
-(defparameter *CREAL-TOLERANCE* 100
+(defvar *CREAL-TOLERANCE* 100
   "precision threshold for the comparison of CREALs,
 denoting the number of binary digits after the decimal point")
 
@@ -116,7 +106,7 @@ denoting the number of binary digits after the decimal point")
 
 (defun RAW-APPROX-R (x)
   "Returns an approximation for CREALs"
-  (unless (creal-p x) (cr-error 'raw-approx-r x))
+  (check-type x creal)
   (raw-approx-cr x))
 
 ;;;;                        P R I N T   F U N C T I O N
@@ -141,14 +131,15 @@ denoting the number of binary digits after the decimal point")
   "output function for CREALs"
   ;; flag /= NIL: the value is printed in a new line
   ;; flag = NIL: no linefeed
-  
-  (assert (creal-p x))
-  (assert (and (integerp k) (not (minusp k))))
-  (assert (streamp stream))
+  (check-type x creal)
+  (check-type k unsigned-byte)
+  (check-type stream stream)
   (creal-print x k flag stream))
 
 (defun creal-print (x k flag stream)
-  (declare (type creal x) (type (integer 0 *) k) (type stream stream))
+  (declare (type creal x)
+           (type unsigned-byte k)
+           (type stream stream))
   (let* ((k1 (tenpower k))
          (n (1+ (integer-length k1)))
          (x1 (get-approx x n))
@@ -180,9 +171,9 @@ denoting the number of binary digits after the decimal point")
   "addition of CREALs"
   (declare (type rational sn) (type list #|(list creal)|# rl))
   (dolist (x args)
-    (cond ((rationalp x) (setq sn (+ x sn)))
-          ((c-real-p x) (setq rl (cons x rl)))
-          (t (cr-error '+ x))) )
+    (etypecase x
+      (rational (setq sn (+ x sn)))
+      (c-real (setq rl (cons x rl)))) )
   ;; sn = exact partial sum
   ;; rl = list of the "real" real arguments
   (let* ((n (length rl))                ; n = how many of them
@@ -200,9 +191,9 @@ denoting the number of binary digits after the decimal point")
 ;;; Negation:
 
 (defun minus-r (x)
-  (cond ((rationalp x) (- x))
-        ((c-real-p x) (make-real #'(lambda (k) (- (get-approx x k)))))
-        (t (cr-error '- x))))
+  (etypecase x
+    (rational (- x))
+    (c-real (make-real #'(lambda (k) (- (get-approx x k)))))))
 
 ;;; Subtraction:
 
@@ -218,9 +209,9 @@ denoting the number of binary digits after the decimal point")
   "Multiplication for CREALs"
   (declare (type rational pn) (type list #|(list creal)|# rl))
   (dolist (x args)
-    (cond ((rationalp x) (setq pn (* x pn)))
-          ((c-real-p x) (setq rl (cons x rl)))
-          (t (cr-error '* x))))
+    (etypecase x
+      (rational (setq pn (* x pn)))
+      (c-real (setq rl (cons x rl)))))
   ;; pn = product of the rational factors
   ;; rl = list of the c-real factors
   (when (or (eql pn 0) (null rl)) (return-from *r pn))
@@ -257,15 +248,15 @@ denoting the number of binary digits after the decimal point")
 ;;; Reciprocal:
 
 (defun invert-r (x)
-  (cond ((rationalp x) (/ x))
-        ((c-real-p x)
-         (multiple-value-bind (a0 n0) (raw-approx-cr x)
-           (when (eql a0 0) (error "division by 0"))
-           (let ((k1 (+ 4 (* 2 (- n0 (integer-length (1- a0))))))
-                 (k2 (1+ n0)))
-             (make-real #'(lambda (k &aux (k0 (max k2 (+ k k1))))
-                            (round (ash 1 (+ k k0)) (get-approx x k0)))))))
-        (t (cr-error '/ x))))
+  (etypecase x
+    (rational (/ x))
+    (c-real x
+     (multiple-value-bind (a0 n0) (raw-approx-cr x)
+       (when (eql a0 0) (error "division by 0"))
+       (let ((k1 (+ 4 (* 2 (- n0 (integer-length (1- a0))))))
+             (k2 (1+ n0)))
+         (make-real #'(lambda (k &aux (k0 (max k2 (+ k k1))))
+                        (round (ash 1 (+ k k0)) (get-approx x k0)))))))))
 
 ;;; Division:
 
@@ -332,8 +323,8 @@ denoting the number of binary digits after the decimal point")
   ;; name = name of the calling function
   ;;
   ;; what = #'round, #'floor, #'ceiling or #'truncate
-  (assert (creal-p x))
-  (assert (creal-p y))
+  (check-type x creal)
+  (check-type y creal)
   (if (and (rationalp x) (rationalp y))
       (funcall what x y) ; for rational numbers use the common function
       (multiple-value-bind (a0 n0) (raw-approx-cr y)
@@ -363,8 +354,8 @@ denoting the number of binary digits after the decimal point")
 
 (defun ASH-R (x n)
   "shift function for CREALs"
-  (assert (creal-p x))
-  (assert (integerp n))
+  (check-type x creal)
+  (check-type n integer)
   (cond ((eql n 0) x)
         ((integerp x)
          (if (plusp n) (ash x n) (/ x (ash 1 (- n)))))
@@ -422,8 +413,8 @@ denoting the number of binary digits after the decimal point")
 
 (defun LOG-R (x &optional (b nil))
   "logarithm for CREALs"
-  (assert (creal-p x))
-  (assert (or (null b) (creal-p b)))
+  (check-type x creal)
+  (check-type b (or null creal))
   (if b
       (/r (log-r x) (log-r b))
       ;; remember log(2^n * a) = n*log(2) + log(a)
@@ -454,7 +445,7 @@ denoting the number of binary digits after the decimal point")
              ((eql y 0) (round-cr erg m)))))))
 
 (defun EXP-R (x) "exponential function for CREALs"
-  (unless (creal-p x) (cr-error 'exp x))
+  (check-type x creal)
   ;; remember exp(a*log2 + b) = exp(b) * 2^a
   (if (eql x 0)
       1
@@ -465,8 +456,8 @@ denoting the number of binary digits after the decimal point")
 
 (defun EXPT-R (x y &aux s)
   "exponentiation function for CREALs"
-  (assert (creal-p x))
-  (assert (creal-p y))
+  (check-type x creal)
+  (check-type y creal)
   (cond ((eql y 0) 1)
         ((integerp y)
          (if (rationalp x) (expt x y) (expt-r1 x y)))
@@ -526,8 +517,8 @@ denoting the number of binary digits after the decimal point")
 
 (defun ATAN-R (x &optional (y nil))
   "arctangent for CREALs"
-  (assert (creal-p x))
-  (assert (or (null y) (creal-p y)))
+  (check-type x creal)
+  (check-type y (or null creal))
   (if (null y)
       (atan-r0 x)
       (multiple-value-bind (ay ny sy) (raw-approx-cr y)
@@ -565,7 +556,7 @@ denoting the number of binary digits after the decimal point")
 
 (defun SIN-R (x)
   "sine for CREALs"
-  (assert (creal-p x))
+  (check-type x creal)
   ;; remember sin(k*2pi + y) = sin(y)
   (if (eql x 0)
       0
@@ -592,7 +583,7 @@ denoting the number of binary digits after the decimal point")
 
 (defun COS-R (x)
   "cosine for CREALs"
-  (assert (creal-p x))
+  (check-type x creal)
   ;; remember cos(k*2pi + y) = cos(y)
   (if (eql x 0)
       1
@@ -602,5 +593,5 @@ denoting the number of binary digits after the decimal point")
 
 (defun TAN-R (x)
   "tangent for CREALs"
-  (assert (creal-p x))
+  (check-type x creal)
   (/r (sin-r x) (cos-r x)))
