@@ -1,5 +1,5 @@
 (defsystem #:computable-reals
-  :version "1.0.1"
+  :version "1.1.0"
   :author "Michael Stoll"
   :maintainer "Robert Smith <robert@stylewarning.com>"
   :description "Computable real numbers."
