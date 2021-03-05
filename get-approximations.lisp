@@ -2,7 +2,7 @@
 ;;;;
 ;;;; Author: Robert Smith
 
-;;;; Here we compute the constants to around 60 digits after
+;;;; Here we compute the constants to around 60 decimal digits after
 ;;;; everything has been loaded.
 
 (in-package #:computable-reals)

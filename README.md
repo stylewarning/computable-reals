@@ -13,26 +13,31 @@ The interface for the outside world is as follows:
 The type `CREAL` is a supertype of the type `RATIONAL`. `(CREAL-P x)`, for
 an object `x`, returns `T` if `x` is of type `CREAL`, otherwise `NIL`.
 
-`(APPROX-R x k)`, for a `CREAL` `x` and an integer `k>=0`, returns an integer
-`a` with `|(2^k)*x - a| < 1`.
+`(RATIONAL-APPROX-R x k)`, for a `CREAL` `x` and an integer `k>=0`, returns a rational `a` with `|x - a| < 1/2^k`.
 
 `(MAKE-REAL fun)` returns the real number given by `fun`. Here `fun` is a
 function taking an argument `k`, that computes `a` as above.
 
-`CREAL`s are output by print etc. as a decimal fraction. The error hereby
-is at most one unit in the last digit that was output. The number of
-decimal digits after the decimal point is defined through the dynamic
-variable `*PRINT-PREC*`.
+`CREAL`s are displayed by `PRINT` (etc.) as a decimal fraction. The
+error hereby is at most one unit in the last digit that was
+output. The number of decimal digits after the decimal point is
+defined through the dynamic variable `*PRINT-PREC*`.
 
-For comparison operations etc. a precision threshold is used. It is
+For *internal* comparison operations etc. a precision threshold is used. It is
 defined through the dynamic variable `*CREAL-TOLERANCE*`. Its value should
 be a nonnegative integer `n`, meaning that numbers are considered equal
 if they differ by at most `2^(-n)`.
 
+**N.B.** There are *no* external comparison functions, since
+comparison is in general not decidable in finite time. Instead, we
+recommend using ordinary Common Lisp comparison functions after
+producing a `k`-bit approximation using the `RATIONAL-APPROX-R` to
+convert a `CREAL` to a rational number.
+
 ## Exported Functions and Constants
 
 The following functions, constants and variables are exported. (The
-package is named `"REALS"`.)
+package is named `"COMPUTABLE-REALS"` or `"CR"` for short.)
 
 ```
 CREAL                  type        type of the computable real numbers
@@ -42,6 +47,9 @@ CREAL-P object         function    tests for type CREAL
 APPROX-R x:creal k:int>=0
                        function    returns approximation of x to k digits
 MAKE-REAL function     function    creates object of type CREAL
+RATIONAL-APPROX-R x:creal k:int>0
+                       function    returns a rational approximation that
+                                    differs by less than 2^(-k).
 RAW-APPROX-R x:creal   function    returns 3 values a,n,s with:
                                    if a = 0: |x| <= 2^(-n), s = 0
                                        and n >= *CREAL-TOLERANCE*

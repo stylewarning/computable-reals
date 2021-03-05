@@ -5,6 +5,7 @@
    ;; reals.lisp
    #:creal
    #:approx-r
+   #:rational-approx-r
    #:make-real
    #:creal-p
    #:print-r

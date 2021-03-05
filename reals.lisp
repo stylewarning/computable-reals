@@ -4,7 +4,7 @@
 ;;;; 1989-06-11, 1989-06-12, 1989-06-13, 1989-06-14, 1989-06-17, 1989-06-30
 
 ;;;; Robert Smith
-;;;; 2011-12-07, 2012-05-26, 2013-02-21, 2018-03-06
+;;;; 2011-12-07, 2012-05-26, 2013-02-21, 2018-03-06, 2021-03-05
 
 ;;;;   I N T E R N A L   S T R U C T U R E S   A N D   I N T E R F A C E
 ;;;;   -----------------------------------------------------------------
@@ -43,12 +43,14 @@
   (declare (type (function ((integer 0 *)) integer) comp))
   (make-c-real :compute comp))
 
-;;; The following function takes an object of type creal and a number k,
-;;; and returns an integer a with |a*2^(-k) - x| <= 2^(-k), where x denotes
-;;; the corresponding real number.
+;;; Approximating CREALs as rationals
 
 (defun APPROX-R (x k)
-  "Computes approximations for CREALs"
+  "Computes an approximation of the bits of a given CREAL. Specifically, given an object of type creal X and a non-negative integer K, return an integer A with
+
+    |A*2^(-k) - X| <= 2^(-K).
+
+See RATIONAL-APPROX-R to produce a rational approximation of CREAL."
   (check-type x creal)
   (check-type k unsigned-byte)
   (get-approx x k))
@@ -65,6 +67,12 @@
          (let ((a (funcall (c-real-compute x) k)))
            (setf (c-real-value x) a (c-real-precision x) k)
            a)))))
+
+(defun RATIONAL-APPROX-R (x k)
+  "Produce a rational approximation of X called R such that
+
+    |R - X| < 2^(-K)."
+  (/ (APPROX-R x k) (expt 2 k)))
 
 ;;;; ==========================================================================
 
