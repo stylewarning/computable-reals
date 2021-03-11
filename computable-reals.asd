@@ -1,6 +1,7 @@
 (defsystem #:computable-reals
   :version "1.1.0"
   :author "Michael Stoll"
+  :license "BSD 3-clause"
   :maintainer "Robert Smith <robert@stylewarning.com>"
   :description "Computable real numbers."
   :long-description "Arbitrary-precision, re-computing real-numbers."
