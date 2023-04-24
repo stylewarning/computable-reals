@@ -74,6 +74,47 @@ See RATIONAL-APPROX-R to produce a rational approximation of CREAL."
     |R - X| < 2^(-K)."
   (/ (APPROX-R x k) (expt 2 k)))
 
+(defun RATIONALIZE-R (x k)
+  "Produce a rational approximation of X called R such that
+
+    |R - X| < 2^(-K),
+
+   taking into account the maximum precision specified by K to return
+   the simplest possible such approximation."
+  (let* ((x (RATIONAL-APPROX-R x k))
+         i1 f1 i2 f2
+         continued-frac)
+    ;; See https://en.wikipedia.org/wiki/Continued_fraction#Best_rational_within_an_interval
+    ;;
+    ;; The simplest rational between A and B can be found by
+    ;; constructing an continued fraction consisting of the shared
+    ;; portion of A and B's continued fractions, then the minimum of
+    ;; the unmatched terms plus one (if positive) or their maximum
+    ;; minus one (if negative). Therefore, the simplest rational which
+    ;; satisfies the equation is the simplest one between r - 1/2^(k+1)
+    ;; and r + 1/2^(k+1)
+    (loop
+      :initially
+         (setf (values i1 f1) (truncate (- x (expt 2 (- -1 k))))
+               (values i2 f2) (truncate (+ x (expt 2 (- -1 k)))))
+      :do (cond
+            ((= i1 i2)
+             (push i1 continued-frac))
+            (t
+             (push
+              (if (plusp x)
+                  (+ (min i1 i2) 1)
+                  (- (max i1 i2) 1))
+              continued-frac)
+             (loop-finish)))
+      :until (or (eq f1 0) (eq f2 0))
+      :do
+         (setf (values i1 f1) (truncate (/ f1))
+               (values i2 f2) (truncate (/ f2))))
+    (reduce
+     (lambda (acc x) (+ x (/ acc)))
+     continued-frac)))
+
 ;;;; ==========================================================================
 
 ;;;;                           V A R I A B L E S
