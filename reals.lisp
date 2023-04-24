@@ -82,8 +82,8 @@ See RATIONAL-APPROX-R to produce a rational approximation of CREAL."
    taking into account the maximum precision specified by K to return
    the simplest possible such approximation."
   (let* ((x (RATIONAL-APPROX-R x k))
-	 i1 f1 i2 f2
-	 continued-frac)
+         i1 f1 i2 f2
+         continued-frac)
     ;; See https://en.wikipedia.org/wiki/Continued_fraction#Best_rational_within_an_interval
     ;;
     ;; The simplest rational between A and B can be found by
@@ -95,22 +95,22 @@ See RATIONAL-APPROX-R to produce a rational approximation of CREAL."
     ;; and r + 1/2^(k+1)
     (loop
       :initially
-	 (setf (values i1 f1) (truncate (- x (expt 2 (- -1 k))))
-	       (values i2 f2) (truncate (+ x (expt 2 (- -1 k)))))
+         (setf (values i1 f1) (truncate (- x (expt 2 (- -1 k))))
+               (values i2 f2) (truncate (+ x (expt 2 (- -1 k)))))
       :do (cond
-	    ((= i1 i2)
-	     (push i1 continued-frac))
-	    (t
-	     (push
-	      (if (plusp x)
-		  (+ (min i1 i2) 1)
-		  (- (max i1 i2) 1))
-	      continued-frac)
-	     (loop-finish)))
+            ((= i1 i2)
+             (push i1 continued-frac))
+            (t
+             (push
+              (if (plusp x)
+                  (+ (min i1 i2) 1)
+                  (- (max i1 i2) 1))
+              continued-frac)
+             (loop-finish)))
       :until (or (eq f1 0) (eq f2 0))
       :do
-	 (setf (values i1 f1) (truncate (/ f1))
-	       (values i2 f2) (truncate (/ f2))))
+         (setf (values i1 f1) (truncate (/ f1))
+               (values i2 f2) (truncate (/ f2))))
     (reduce
      (lambda (acc x) (+ x (/ acc)))
      continued-frac)))
