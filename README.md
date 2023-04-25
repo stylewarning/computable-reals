@@ -50,6 +50,9 @@ MAKE-REAL function     function    creates object of type CREAL
 RATIONAL-APPROX-R x:creal k:int>0
                        function    returns a rational approximation that
                                     differs by less than 2^(-k).
+RATIONALIZE-R x:creal k:int>0
+                       function    returns the simplest rational approximation
+                                    that differs by less than 2^(-k)
 RAW-APPROX-R x:creal   function    returns 3 values a,n,s with:
                                    if a = 0: |x| <= 2^(-n), s = 0
                                        and n >= *CREAL-TOLERANCE*

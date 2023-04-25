@@ -6,6 +6,7 @@
    #:creal
    #:approx-r
    #:rational-approx-r
+   #:rationalize-r
    #:make-real
    #:creal-p
    #:print-r
