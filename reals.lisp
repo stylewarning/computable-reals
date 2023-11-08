@@ -150,8 +150,7 @@ denoting the number of binary digits after the decimal point")
   (do* ((k 0 (+ k 4))
         (a (get-approx x 0) (get-approx x k))
         (crt (+ 2 *creal-tolerance*)))
-       ((> (abs a) 4) (values (abs a) k (signum a)))
-    (when (> k crt) (return (values 0 (- k 3) 0)))))
+       ((> (abs a) 4) (values (abs a) k (signum a)))))
 
 (defun RAW-APPROX-R (x)
   "Returns an approximation for CREALs"
